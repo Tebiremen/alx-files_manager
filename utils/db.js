@@ -1,66 +1,56 @@
-import mongodb from 'mongodb';
-// eslint-disable-next-line no-unused-vars
-import Collection from 'mongodb/lib/collection';
-import envLoader from './env_loader';
+const { MongoClient } = require('mongodb');
 
-/**
- * Represents a MongoDB client.
- */
+const DB_HOST = process.env.DB_HOST || 'localhost';
+const DB_PORT = process.env.DB_PORT || 27017;
+const DB_DATABASE = process.env.DB_DATABASE || 'files_manager';
+const url = `mongodb://${DB_HOST}:${DB_PORT}`;
+
 class DBClient {
-  /**
-   * Develops a new DBClient instance.
-   */
   constructor() {
-    envLoader();
-    const host = process.env.DB_HOST || 'localhost';
-    const port = process.env.DB_PORT || 27017;
-    const database = process.env.DB_DATABASE || 'files_manager';
-    const dbURL = `mongodb://${host}:${port}/${database}`;
+    this.client = new MongoClient(url, { useUnifiedTopology: true, useNewUrlParser: true });
+    this.db = null; // Reference to the MongoDB database
 
-    this.client = new mongodb.MongoClient(dbURL, { useUnifiedTopology: true });
-    this.client.connect();
+    this.connect(); // Connect to the MongoDB server
   }
 
-  /**
-   * Reviews if this client's connection to the MongoDB server is active.
-   * @returns {boolean}
-   */
+  async connect() {
+    try {
+      await this.client.connect(); // Connect to the MongoDB server
+      this.db = this.client.db(DB_DATABASE); // Assign the database reference
+      console.log('Connected to MongoDB');
+    } catch (err) {
+      console.error('Error connecting to MongoDB:', err);
+    }
+  }
+
   isAlive() {
     return this.client.isConnected();
   }
 
-  /**
-   * Recovers the number of users in the database.
-   * @returns {Promise<Number>}
-   */
   async nbUsers() {
-    return this.client.db().collection('users').countDocuments();
+    try {
+      const users = this.db.collection('users');
+      const usersCount = await users.countDocuments();
+      return usersCount;
+    } catch (err) {
+      console.error(err);
+      throw err;
+      // handle error as necessary
+    }
   }
 
-  /**
-   * Recovers the number of files in the database.
-   * @returns {Promise<Number>}
-   */
   async nbFiles() {
-    return this.client.db().collection('files').countDocuments();
-  }
-
-  /**
-   * Recovers a reference to the `users` collection.
-   * @returns {Promise<Collection>}
-   */
-  async usersCollection() {
-    return this.client.db().collection('users');
-  }
-
-  /**
-   * Recovers a reference to the `files` collection.
-   * @returns {Promise<Collection>}
-   */
-  async filesCollection() {
-    return this.client.db().collection('files');
+    try {
+      const files = this.db.collection('files');
+      const filesCount = await files.countDocuments();
+      return filesCount;
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
   }
 }
 
-export const dbClient = new DBClient();
+const dbClient = new DBClient();
+
 export default dbClient;
