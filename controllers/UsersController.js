@@ -1,4 +1,5 @@
 import dbClient from '../utils/db';
+import redisClient from '../utils/redis';
 /* eslint-disable  no-unused-vars */
 const { ObjectId } = require('mongodb');
 const sha1 = require('sha1');
@@ -37,6 +38,31 @@ class UsersController {
     };
 
     return res.status(201).json(insertedUser);
+  }
+
+  static async getMe(req, res) {
+    const token = req.header('X-Token');
+
+    if (!token) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const key = `auth_${token}`;
+    const userId = await redisClient.get(key);
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const users = dbClient.db.collection('users');
+    const user = await users.findOne({ _id: ObjectId(userId) });
+
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { _id, email } = user;
+    return res.status(200).json({ id: _id, email });
   }
 }
 
