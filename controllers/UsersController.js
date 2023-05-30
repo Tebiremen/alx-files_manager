@@ -1,7 +1,6 @@
-import dbClient from '../utils/db';
-
-const { ObjectId } = require('mongodb');
+// const { ObjectId } = require('mongodb');
 const sha1 = require('sha1');
+const DBClient = require('../utils/db');
 
 class UsersController {
   static async postNew(req, res) {
@@ -14,8 +13,8 @@ class UsersController {
     if (!password) {
       return res.status(400).json({ error: 'Missing password' });
     }
-
-    const users = dbClient.db.collection('users');
+    const db = DBClient.db('files_manager');
+    const users = db.collection('users');
 
     const existingUser = await users.findOne({ email });
     if (existingUser) {
