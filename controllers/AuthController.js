@@ -9,7 +9,7 @@ class AuthController {
     let userEmail = authData.split(' ')[1];
     const buff = Buffer.from(userEmail, 'base64');
     userEmail = buff.toString('ascii');
-    const data = userEmail.split(':'); // contains email and password
+    const data = userEmail.split(':');
     if (data.length !== 2) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
