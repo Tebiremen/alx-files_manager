@@ -203,17 +203,18 @@ class FilesController {
     if (!user) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-
-    const fileId = req.params.id;
+    const { id } = req.params;
     const files = dbClient.db.collection('files');
-    const file = await files.findOne({ _id: fileId, userId: user._id });
-
-    if (!file) {
-      return res.status(404).json({ error: 'Not found' });
-    }
-
-    await files.updateOne({ _id: fileId }, { $set: { isPublic: true } });
-    return res.status(200).json(file);
+    const idObject = new ObjectID(id);
+    const newValue = { $set: { isPublic: true } };
+    const options = { returnOriginal: false };
+    files.findOneAndUpdate({ _id: idObject, userId: user._id }, newValue, options, (err, file) => {
+      if (!file.lastErrorObject.updatedExisting) {
+        return res.status(404).json({ error: 'Not found' });
+      }
+      return res.status(200).json(file.value);
+    });
+    return null;
   }
 
   static async putUnpublish(req, res) {
@@ -221,17 +222,18 @@ class FilesController {
     if (!user) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-
-    const fileId = req.params.id;
+    const { id } = req.params;
     const files = dbClient.db.collection('files');
-    const file = await files.findOne({ _id: fileId, userId: user._id });
-
-    if (!file) {
-      return res.status(404).json({ error: 'Not found' });
-    }
-
-    await files.updateOne({ _id: fileId }, { $set: { isPublic: false } });
-    return res.status(200).json(file);
+    const idObject = new ObjectID(id);
+    const newValue = { $set: { isPublic: false } };
+    const options = { returnOriginal: false };
+    files.findOneAndUpdate({ _id: idObject, userId: user._id }, newValue, options, (err, file) => {
+      if (!file.lastErrorObject.updatedExisting) {
+        return res.status(404).json({ error: 'Not found' });
+      }
+      return res.status(200).json(file.value);
+    });
+    return null;
   }
 
   static async getFile(req, res) {
